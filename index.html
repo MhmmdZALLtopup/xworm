@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>XWORM V23 | X-TITAN PRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #fe2c55; --cyan: #25f4ee; --dark: #000; --nav-h: 65px; --glass: rgba(25,25,25,0.85); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--dark); color: #fff; height: 100vh; overflow: hidden; width: 100%; position: fixed; }
+
+        /* --- GLOBAL ANIMATIONS --- */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(1.5); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        /* --- FLOATING HEARTS --- */
+        .floating-heart { position: absolute; color: var(--red); font-size: 24px; pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 100; filter: drop-shadow(0 0 5px rgba(254,44,85,0.5)); }
+
+        /* --- LOADING SCREEN --- */
+        #loader { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 60px; height: 60px; border: 4px solid transparent; border-top-color: var(--cyan); border-bottom-color: var(--red); border-radius: 50%; animation: spin 1s linear infinite; }
+        .load-text { margin-top: 20px; font-weight: 900; letter-spacing: 2px; background: linear-gradient(90deg, var(--cyan), var(--red)); -webkit-background-clip: text; color: transparent; animation: pulse 1.5s infinite; }
+
+        /* --- FEED ENGINE --- */
+        #feed-view { height: calc(100vh - var(--nav-h)); overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; background: #000; }
+        #feed-view::-webkit-scrollbar { display: none; }
+        .v-card { width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; position: relative; display: flex; align-items: center; justify-content: center; background: #080808; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .v-prog-bg { position: absolute; bottom: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.15); z-index: 30; }
+        .v-prog-bar { height: 100%; background: #fff; width: 0%; box-shadow: 0 0 5px #fff; }
+
+        /* --- OVERLAY UI --- */
+        .overlay { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 15px 40px; z-index: 20; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 45%); }
+        .overlay > * { pointer-events: auto; }
+        .u-info { margin-right: 70px; }
+        .u-info b { font-size: 17px; display: flex; align-items: center; gap: 6px; text-shadow: 1px 1px 3px #000; font-weight: 700; }
+        .verified { color: var(--cyan); font-size: 15px; }
+        .streak-badge { background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); color: #ff0844; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 900; }
+        .u-info p { font-size: 14px; margin-top: 6px; line-height: 1.4; opacity: 0.95; }
+
+        /* --- SIDEBAR --- */
+        .side-bar { position: absolute; right: 10px; bottom: 80px; display: flex; flex-direction: column; align-items: center; gap: 22px; z-index: 40; }
+        .side-btn { text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .side-btn:active { transform: scale(0.8); }
+        .side-btn i { font-size: 34px; filter: drop-shadow(0 2px 4px #000); color: #fff; }
+        .side-btn .liked { color: var(--red); animation: pulse 0.3s; }
+        .side-btn span { font-size: 12px; font-weight: 700; display: block; margin-top: 2px; text-shadow: 0 1px 2px #000; }
+        
+        .pfp-wrap { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #fff; position: relative; background: #333; }
+        .pfp-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .music-disc { width: 44px; height: 44px; border-radius: 50%; border: 10px solid #222; animation: spin 5s linear infinite; margin-top: 10px; }
+
+        /* --- COMMENTS PANEL --- */
+        .comm-panel { position: fixed; bottom: 0; width: 100%; height: 65vh; background: var(--glass); backdrop-filter: blur(15px); z-index: 3000; border-radius: 20px 20px 0 0; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; border-top: 1px solid #333; }
+        .comm-head { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; }
+        .comm-close { position: absolute; right: 15px; top: 15px; font-size: 20px; color: #888; cursor: pointer; }
+        .comm-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .comm-item { display: flex; gap: 10px; margin-bottom: 15px; }
+        .comm-item img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
+        .comm-box { display: flex; gap: 10px; padding: 15px; background: rgba(0,0,0,0.5); }
+        .comm-box input { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; background: #333; color: #fff; font-size: 14px; }
+        .comm-box button { background: var(--red); color: #fff; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; }
+
+        /* --- CAMERA & RECORDING SYSTEM --- */
+        #cam-view { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
+        #cam-vid { flex: 1; width: 100%; object-fit: cover; background: #111; }
+        .cam-controls { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 40px; z-index: 5010; }
+        .record-btn { width: 80px; height: 80px; border-radius: 50%; border: 5px solid #fff; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .record-btn .inner { width: 60px; height: 60px; background: var(--red); border-radius: 50%; transition: 0.3s; }
+        .record-btn.recording .inner { border-radius: 10px; transform: scale(0.6); }
+        .cam-close { position: absolute; top: 20px; left: 20px; font-size: 30px; color: #fff; z-index: 5010; text-shadow: 0 2px 4px #000; cursor: pointer; }
+        #cam-timer { position: absolute; top: 30px; width: 100%; text-align: center; color: var(--red); font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px #000; z-index: 5010; display: none; }
+        
+        /* PREVIEW AFTER RECORD */
+        #cam-preview-box { position: absolute; inset: 0; background: #000; z-index: 5020; display: none; flex-direction: column; }
+        #preview-vid { flex: 1; width: 100%; object-fit: cover; }
+        .preview-action { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-around; padding: 0 20px; }
+        .p-btn { padding: 15px 30px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; }
+
+        /* --- PROFILE VIEW --- */
+        .screen { display: none; position: absolute; inset: 0; background: #000; z-index: 1000; overflow-y: auto; padding-bottom: 80px; }
+        .screen.active { display: block; }
+        .p-head { padding: 40px 20px 20px; text-align: center; border-bottom: 1px solid #222; }
+        .p-avatar { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--cyan); margin: 0 auto 15px; position: relative; overflow: hidden; background: #111; cursor: pointer; }
+        .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .streak-fire { font-size: 24px; position: absolute; top: -10px; right: -10px; animation: pulse 2s infinite; filter: drop-shadow(0 0 5px orange); }
+        
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; }
+        .thumb { aspect-ratio: 9/16; background: #1a1a1a; position: relative; cursor: pointer; overflow: hidden; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.3s; }
+        .thumb:active img { transform: scale(1.1); }
+        .thumb-stats { position: absolute; bottom: 5px; left: 8px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; z-index: 5; text-shadow: 1px 1px 2px #000; }
+        .del-vid { position: absolute; top: 5px; right: 5px; background: rgba(254,44,85,0.9); color: #fff; border: none; padding: 4px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; }
+
+        /* SINGLE PLAYER (PROFIL) */
+        #single-player { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; }
+        .sp-back { position: absolute; top: 25px; left: 20px; font-size: 28px; z-index: 2010; text-shadow: 0 2px 5px #000; cursor: pointer; }
+
+        /* --- NAVBAR --- */
+        .nav { position: fixed; bottom: 0; width: 100%; height: var(--nav-h); background: rgba(0,0,0,0.95); border-top: 1px solid #1a1a1a; display: flex; z-index: 2500; backdrop-filter: blur(10px); }
+        .nav-it { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .nav-it.active { color: #fff; }
+        .plus-box { background: linear-gradient(45deg, var(--cyan), var(--red)); width: 48px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .plus-box::before { content: ""; position: absolute; width: 40px; height: 100%; background: #fff; border-radius: 8px; z-index: -1; }
+        .plus-box i { color: #000; font-size: 20px; }
+
+        /* --- MODALS --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
+        .m-box { background: #151515; width: 100%; padding: 30px; border-radius: 20px; border: 1px solid #333; text-align: center; }
+        .m-box input, .m-box textarea { width: 100%; padding: 15px; background: #222; border: 1px solid #333; color: #fff; border-radius: 12px; margin: 10px 0; outline: none; }
+        .m-box input:focus { border-color: var(--cyan); }
+        .btn-main { width: 100%; padding: 15px; background: var(--red); color: #fff; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <div class="load-text">MEMPROSES DATA...</div>
+</div>
+
+<div id="feed-view"></div>
+
+<div id="comm-panel" class="comm-panel">
+    <div class="comm-head">Komentar <i class="fas fa-times comm-close" onclick="toggleComm(false)"></i></div>
+    <div class="comm-list" id="comm-list"></div>
+    <div class="comm-box">
+        <input type="text" id="c-input" placeholder="Tambahkan komentar keren...">
+        <button onclick="postComm()">Kirim</button>
+    </div>
+</div>
+
+<div id="p-view" class="screen">
+    <div style="padding:15px; font-size:24px;" onclick="closeP()"><i class="fas fa-arrow-left"></i></div>
+    <div class="p-head">
+        <div class="p-avatar" onclick="changePfp()">
+            <div id="p-img-box"></div>
+            <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.6); font-size:10px; padding:3px 0;">GANTI FOTO</div>
+        </div>
+        <h2 id="p-nick" style="display:flex; align-items:center; justify-content:center; gap:5px;">@User</h2>
+        <div style="color:orange; font-size:14px; font-weight:bold; margin-top:5px;" id="p-streak">🔥 0 Hari Streak</div>
+        <div style="display:flex; justify-content:center; gap:50px; margin:20px 0;">
+            <div><b id="p-fol" style="font-size:20px;">0</b><br><small style="color:#888">Pengikut</small></div>
+            <div><b id="p-lik" style="font-size:20px;">0</b><br><small style="color:#888">Suka</small></div>
+        </div>
+    </div>
+    <div id="p-grid" class="grid"></div>
+</div>
+
+<div id="single-player">
+    <i class="fas fa-arrow-left sp-back" onclick="closeSinglePlayer()"></i>
+    <video id="sp-vid" src="" loop playsinline style="width:100%; height:100%; object-fit:cover;" onclick="this.paused?this.play():this.pause()"></video>
+</div>
+
+<div id="cam-view">
+    <i class="fas fa-times cam-close" onclick="closeCam()"></i>
+    <div id="cam-timer">00:00</div>
+    <video id="cam-vid" autoplay playsinline muted></video>
+    <div class="cam-controls">
+        <i class="fas fa-image" style="font-size:30px; color:#fff;" onclick="openUpModal()"></i>
+        <div class="record-btn" id="btn-rec" onclick="toggleRecord()">
+            <div class="inner"></div>
+        </div>
+        <i class="fas fa-sync-alt" style="font-size:30px; color:#fff;" onclick="switchCam()"></i>
+    </div>
+</div>
+
+<div id="cam-preview-box">
+    <video id="preview-vid" loop playsinline></video>
+    <div style="position:absolute; top:20px; width:100%; padding:0 20px;">
+        <input type="text" id="preview-desc" placeholder="Tulis Caption..." style="width:100%; padding:15px; background:rgba(0,0,0,0.6); border:none; color:#fff; border-radius:10px; font-size:16px;">
+    </div>
+    <div class="preview-action">
+        <button class="p-btn" style="background:#333; color:#fff;" onclick="discardRec()">Buang</button>
+        <button class="p-btn" style="background:var(--red); color:#fff;" onclick="uploadRecording()">Posting</button>
+    </div>
+</div>
+
+<div class="nav">
+    <div class="nav-it active" onclick="goHome()"><i class="fas fa-home fa-xl" style="margin-bottom:6px;"></i>Beranda</div>
+    <div class="nav-it" onclick="openCam()"><div class="plus-box"><i class="fas fa-plus"></i></div></div>
+    <div class="nav-it" onclick="openMyP()"><i class="fas fa-user fa-xl" style="margin-bottom:6px;"></i>Profil</div>
+</div>
+
+<input type="file" id="f-pfp" accept="image/*" style="display:none;" onchange="uploadPfpReal(this)">
+<input type="file" id="f-vid-gal" accept="video/*" style="display:none;" onchange="processGalleryVideo(this)">
+
+<div id="logM" class="modal" style="display:flex;">
+    <div class="m-box">
+        <h1 style="color:var(--cyan); font-size:28px;">X-TITAN <span style="color:var(--red)">PRO</span></h1>
+        <p style="color:#777; margin-bottom:20px; font-size:12px;">Exclusive XWORM V23</p>
+        <input type="text" id="reg-n" placeholder="Username (Wajib: BroJJ)">
+        <button class="btn-main" onclick="login()">MASUK</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, increment, getDoc, setDoc, deleteDoc, where, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD3usv5rw801fV1nrXIwyDQ6eYEzC7hDk0", authDomain: "kodangz.firebaseapp.com",
+        projectId: "kodangz", storageBucket: "kodangz.firebasestorage.app",
+        messagingSenderId: "306989473099", appId: "1:306989473099:web:9049d3135ce13e08a8dcce"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let my = JSON.parse(localStorage.getItem('xw_v23')) || null;
+    let scrollPos = 0;
+    let currVidId = "";
+
+    // OWNER CONFIG
+    const VIP = "BroJJ";
+    const ICON_VIP = `<i class="fas fa-check-circle verified"></i>`;
+
+    // INIT SYSTEM
+    if(my) { 
+        document.getElementById('logM').style.display='none'; 
+        checkStreak(); 
+        initFeed(); 
+        syncUser(); 
+    }
+
+    // --- LOGIC AUTH & STREAK 🔥 ---
+    window.login = async () => {
+        const n = document.getElementById('reg-n').value.trim();
+        if(!n) return;
+        const isVip = (n === VIP);
+        const today = new Date().toDateString();
+        const u = { nick: n, pfp: "", followers: isVip ? 99900000 : 0, likes: 0, streak: 1, lastLogin: today };
+        
+        // Cek data lama
+        const ex = await getDoc(doc(db, "users", n));
+        if(!ex.exists()) { await setDoc(doc(db, "users", n), u); my = u; } 
+        else { my = ex.data(); await checkStreakOnLogin(n, my); }
+        
+        localStorage.setItem('xw_v23', JSON.stringify(my));
+        location.reload();
+    };
+
+    async function checkStreakOnLogin(nick, data) {
+        const today = new Date().toDateString();
+        let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        yesterday = yesterday.toDateString();
+
+        let s = data.streak || 0;
+        if(data.lastLogin === yesterday) s += 1;
+        else if (data.lastLogin !== today) s = 1;
+
+        my.streak = s; my.lastLogin = today;
+        await updateDoc(doc(db, "users", nick), { streak: s, lastLogin: today });
+    }
+
+    async function checkStreak() { checkStreakOnLogin(my.nick, my); }
+    async function syncUser() { onSnapshot(doc(db, "users", my.nick), (d) => { if(d.exists()) { my = d.data(); localStorage.setItem('xw_v23', JSON.stringify(my)); } }); }
+
+    // --- FEED ENGINE ---
+    async function initFeed() {
+        const f = document.getElementById('feed-view'); f.innerHTML = "";
+        const q = query(collection(db, "global_videos"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            if(f.innerHTML !== "") return; // Cegah re-render berulang
+            snap.forEach(d => {
+                const v = d.data();
+                const isO = v.user === VIP;
+                const pfp = v.userPfp || 'https://i.pravatar.cc/150';
+                const streakHTML = v.userStreak > 2 ? `<span class="streak-badge">🔥 ${v.userStreak}</span>` : '';
+
+                f.innerHTML += `
+                <div class="v-card" id="vc-${d.id}">
+                    <video src="${v.url}" loop playsinline muted onclick="handleVideoClick(this, '${d.id}', event)"></video>
+                    <div class="v-prog-bg"><div class="v-prog-bar" id="pb-${d.id}"></div></div>
+                    <div class="overlay">
+                        <div class="u-info" onclick="openP('${v.user}')">
+                            <b>@${v.user} ${isO ? ICON_VIP : ''} ${streakHTML}</b>
+                            <p>${v.desc}</p>
+                        </div>
+                    </div>
+                    <div class="side-bar">
+                        <div class="pfp-wrap" onclick="openP('${v.user}')"><img src="${pfp}"></div>
+                        <div class="side-btn" onclick="likeAnim('${d.id}','${v.user}', this, event)">
+                            <i class="fas fa-heart"></i><span id="lk-${d.id}">${v.likes}</span>
+                        </div>
+                        <div class="side-btn" onclick="openComm('${d.id}')">
+                            <i class="fas fa-comment-dots"></i><span>...</span>
+                        </div>
+                        <div class="side-btn" onclick="window.open('https://wa.me/?text=Cek video X-TITAN: ${v.url}')">
+                            <i class="fas fa-share"></i><span>Share</span>
+                        </div>
+                        <img class="music-disc" src="${pfp}">
+                    </div>
+                </div>`;
+            });
+            setupObserver();
+            f.scrollTop = scrollPos;
+        });
+    }
+
+    function setupObserver() {
+        const obs = new IntersectionObserver((es) => {
+            es.forEach(e => {
+                const v = e.target.querySelector('video');
+                const pb = e.target.querySelector('.v-prog-bar');
+                if(e.isIntersecting) {
+                    v.play(); v.muted = false;
+                    v.ontimeupdate = () => pb.style.width = (v.currentTime/v.duration*100) + "%";
+                } else { v.pause(); }
+            });
+        }, { threshold: 0.7 });
+        document.querySelectorAll('.v-card').forEach(c => obs.observe(c));
+    }
+
+    window.handleVideoClick = (vid, id, e) => {
+        if(vid.paused) vid.play(); else vid.pause();
+    };
+
+    // --- ANIMASI LIKE & LOGIC ---
+    window.likeAnim = async (id, targetUser, el, e) => {
+        // Efek ikon
+        const icon = el.querySelector('i');
+        icon.classList.add('liked');
+        setTimeout(() => icon.classList.remove('liked'), 300);
+
+        // Update DB
+        await updateDoc(doc(db,"global_videos",id), {likes: increment(1)});
+        await updateDoc(doc(db,"users",targetUser), {likes: increment(1)});
+        
+        // Floating Heart DOM
+        const heart = document.createElement('i');
+        heart.className = 'fas fa-heart floating-heart';
+        heart.style.left = (e.clientX - 10) + "px";
+        heart.style.top = (e.clientY - 20) + "px";
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 1000);
+    };
+
+    // --- COMMENTS ENGINE ---
+    window.openComm = (id) => {
+        currVidId = id;
+        document.getElementById('comm-panel').style.display = 'flex';
+        const q = query(collection(db, "global_videos", id, "comments"), orderBy("time", "asc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('comm-list'); list.innerHTML = "";
+            snap.forEach(d => {
+                const c = d.data();
+                const isV = c.user === VIP;
+                list.innerHTML += `
+                <div class="comm-item">
+                    <img src="${c.pfp || 'https://i.pravatar.cc/100'}">
+                    <div>
+                        <b style="font-size:12px; color:${isV?'var(--cyan)':'#aaa'};">${c.user} ${isV?ICON_VIP:''}</b>
+                        <p style="font-size:14px;">${c.text}</p>
+                    </div>
+                </div>`;
+            });
+            list.scrollTop = list.scrollHeight;
+        });
+    };
+    window.toggleComm = (s) => document.getElementById('comm-panel').style.display = s ? 'flex' : 'none';
+    window.postComm = async () => {
+        const t = document.getElementById('c-input').value; if(!t) return;
+        await addDoc(collection(db, "global_videos", currVidId, "comments"), { user: my.nick, pfp: my.pfp, text: t, time: Date.now() });
+        document.getElementById('c-input').value = "";
+    };
+
+    // --- CAMERA (WEBRTC) & MEDIA RECORDER ---
+    let stream, mediaRec, chunks = [], recBlob, camInt;
+    let sec = 0;
+    
+    window.openCam = async () => {
+        document.querySelectorAll('video').forEach(v=>v.pause());
+        document.getElementById('cam-view').style.display = 'flex';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true });
+            document.getElementById('cam-vid').srcObject = stream;
+        } catch(e) { alert("Akses kamera ditolak/tidak support. Gunakan ikon Galeri."); }
+    };
+    
+    window.closeCam = () => {
+        document.getElementById('cam-view').style.display = 'none';
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        initFeed();
+    };
+
+    window.toggleRecord = () => {
+        const btn = document.getElementById('btn-rec');
+        if(!mediaRec || mediaRec.state === 'inactive') {
+            chunks = []; sec = 0;
+            mediaRec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            mediaRec.ondataavailable = e => chunks.push(e.data);
+            mediaRec.onstop = () => {
+                recBlob = new Blob(chunks, { type: 'video/webm' });
+                showPreview(URL.createObjectURL(recBlob));
+            };
+            mediaRec.start();
+            btn.classList.add('recording');
+            document.getElementById('cam-timer').style.display = 'block';
+            camInt = setInterval(() => { sec++; document.getElementById('cam-timer').innerText = `00:${sec<10?'0'+sec:sec}`; }, 1000);
+        } else {
+            mediaRec.stop();
+            btn.classList.remove('recording');
+            clearInterval(camInt);
+            document.getElementById('cam-timer').style.display = 'none';
+        }
+    };
+
+    function showPreview(url) {
+        document.getElementById('cam-view').style.display = 'none';
+        document.getElementById('cam-preview-box').style.display = 'flex';
+        const v = document.getElementById('preview-vid');
+        v.src = url; v.play();
+    }
+
+    window.discardRec = () => {
+        document.getElementById('cam-preview-box').style.display = 'none';
+        document.getElementById('preview-vid').src = "";
+        openCam();
+    };
+
+    window.uploadRecording = async () => {
+        if(!recBlob) return;
+        document.getElementById('cam-preview-box').style.display = 'none';
+        document.getElementById('loader').style.display = 'flex';
+        
+        // Upload ke Cloudinary
+        const file = new File([recBlob], "rekaman.webm", { type: 'video/webm' });
+        const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'qz8ltfpp');
+        
+        const res = await fetch('https://api.cloudinary.com/v1_1/dax2e73hm/video/upload', {method:'POST', body:fd});
+        const d = await res.json();
+        const desc = document.getElementById('preview-desc').value || "Video dari Kamera X-TITAN";
+
+        await addDoc(collection(db, "global_videos"), {
+            user: my.nick, userPfp: my.pfp, userStreak: my.streak,
+            url: d.secure_url, desc: desc, likes: 0, timestamp: Date.now()
+        });
+        
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        location.reload();
+    };
+
+    // GALERI UPLOAD (FALLBACK)
+    window.openUpModal = () => document.getElementById('f-vid-gal').click();
+    window.processGalleryVideo = async (input) => {
+        const file = input.files[0]; if(!file) return;
+        closeCam();
+        document.getElementById('loader').style.display = 'flex';
+        const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'qz8ltfpp');
+        const res = await fetch('https://api.cloudinary.com/v1_1/dax2e73hm/video/upload', {method:'POST', body:fd});
+        const d = await res.json();
+        
+        await addDoc(collection(db, "global_videos"), {
+            user: my.nick, userPfp: my.pfp, userStreak: my.streak,
+            url: d.secure_url, desc: "Upload dari Galeri", likes: 0, timestamp: Date.now()
+        });
+        location.reload();
+    }
+
+    // --- PROFILE SYSTEM ---
+    window.openP = async (nick) => {
+        scrollPos = document.getElementById('feed-view').scrollTop;
+        document.querySelectorAll('video').forEach(v => v.pause());
+        document.getElementById('p-view').classList.add('active');
+        
+        const d = (await getDoc(doc(db,"users",nick))).data();
+        const isO = nick === VIP;
+        
+        document.getElementById('p-nick').innerHTML = `@${d.nick} ${isO ? ICON_VIP : ''}`;
+        document.getElementById('p-fol').innerText = d.followers >= 1000000 ? (d.followers/1000000).toFixed(1)+"M" : d.followers;
+        document.getElementById('p-lik').innerText = d.likes;
+        document.getElementById('p-streak').innerText = `🔥 ${d.streak || 0} Hari Streak`;
+        document.getElementById('p-img-box').innerHTML = d.pfp ? `<img src="${d.pfp}">` : `<i class="fas fa-user" style="font-size:40px; margin-top:25px; color:#555"></i>`;
+
+        const q = query(collection(db, "global_videos"), where("user", "==", nick));
+        const snap = await getDocs(q);
+        const grid = document.getElementById('p-grid'); grid.innerHTML = "";
+        
+        snap.forEach(docV => {
+            const u = docV.data().url;
+            const thumbUrl = u.replace(/\.[^/.]+$/, ".jpg"); // Thumbnail generator
+            grid.innerHTML += `
+            <div class="thumb">
+                <img src="${thumbUrl}" onclick="playSP('${u}')">
+                <div class="thumb-stats"><i class="fas fa-play"></i> ${docV.data().likes}</div>
+                ${nick === my.nick ? `<button class="del-vid" onclick="delV('${docV.id}')">HAPUS</button>` : ''}
+            </div>`;
+        });
+    };
+
+    window.playSP = (url) => {
+        document.getElementById('single-player').style.display = 'block';
+        const vid = document.getElementById('sp-vid');
+        vid.src = url; vid.play();
+    };
+
+    window.closeSinglePlayer = () => {
+        const vid = document.getElementById('sp-vid');
+        vid.pause(); vid.src = "";
+        document.getElementById('single-player').style.display = 'none';
+    };
+
+    window.changePfp = () => { if(document.getElementById('p-nick').innerText.includes(my.nick)) document.getElementById('f-pfp').click(); };
+    window.uploadPfpReal = async (input) => {
+        const file = input.files[0]; if(!file) return;
+        document.getElementById('loader').style.display = 'flex';
+        const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'qz8ltfpp');
+        const res = await fetch('https://api.cloudinary.com/v1_1/dax2e73hm/image/upload', {method:'POST', body:fd});
+        const d = await res.json();
+        await updateDoc(doc(db, "users", my.nick), { pfp: d.secure_url });
+        location.reload();
+    };
+
+    window.delV = async (id) => { if(confirm("Hapus permanen?")) { await deleteDoc(doc(db, "global_videos", id)); openP(my.nick); } };
+    window.goHome = () => { document.getElementById('p-view').classList.remove('active'); initFeed(); };
+    window.openMyP = () => openP(my.nick);
+    window.closeP = () => goHome();
+
+</script>
+</body>
+</html>
