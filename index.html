@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>C-FILMS V49 | ELITE HD CINEMATIC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #e50914; --bg: #050505; --card-w: 115px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { background: var(--bg); color: #fff; font-family: 'Roboto', sans-serif; overflow: hidden; -webkit-user-select: none; }
+
+        /* HEADER */
+        header { position: fixed; top: 0; width: 100%; padding: 15px 20px; z-index: 5000; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); transition: 0.3s; }
+        header.solid { background: #000; }
+        .brand { color: var(--red); font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+
+        /* SCROLLER */
+        .scroller { height: 100vh; overflow-y: auto; scrollbar-width: none; opacity: 0; transition: 0.8s; }
+        .scroller::-webkit-scrollbar { display: none; }
+        
+        /* HERO */
+        .hero { width: 100%; height: 75vh; position: relative; background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 25px; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--bg) 10%, transparent 70%), rgba(0,0,0,0.2); }
+        .hero-info { position: relative; z-index: 10; width: 100%; }
+        .hero-title { font-size: 35px; font-weight: 900; margin-bottom: 15px; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
+        .btn-play { background: #fff; color: #000; border: none; padding: 12px; width: 100%; border-radius: 4px; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+
+        /* ROWS */
+        .row { margin-top: 25px; padding-left: 15px; }
+        .row-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+        .row-items { display: flex; overflow-x: auto; gap: 10px; scrollbar-width: none; padding-bottom: 10px; }
+        .row-items::-webkit-scrollbar { display: none; }
+        .card { min-width: var(--card-w); border-radius: 4px; overflow: hidden; background: #111; transition: 0.3s; }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+
+        /* PLAYER & AUTO-HIDE LOGIC */
+        #playerUI { position: fixed; inset: 0; background: #000; z-index: 999999; display: none; }
+        #ytWrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #ytPlayer { width: 110vw; height: 110vh; pointer-events: none; } /* Zoom 1.1x */
+        
+        .controls { 
+            position: absolute; 
+            inset: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 10; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 40px; 
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Class khusus untuk sembunyi otomatis */
+        .controls.hide-ui { 
+            opacity: 0; 
+            visibility: hidden; 
+            pointer-events: none; 
+        }
+
+        /* NAVIGATION */
+        nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; align-items: center; z-index: 4000; border-top: 1px solid #1a1a1a; }
+        .nav-item { color: #808080; text-align: center; font-size: 10px; cursor: pointer; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: #fff; }
+
+        /* SEARCH OVERLAY */
+        #searchOverlay { position: fixed; inset: 0; background: #000; z-index: 6000; display: none; padding: 20px; }
+        .s-box { background: #222; display: flex; align-items: center; padding: 12px; border-radius: 6px; }
+        #sInp { background: transparent; border: none; color: #fff; flex: 1; outline: none; padding-left: 15px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <header id="navbar">
+        <div class="brand">C-FILMS</div>
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 22px;" onclick="openS()"></i>
+    </header>
+
+    <div id="searchOverlay">
+        <div class="s-box">
+            <i class="fa-solid fa-arrow-left" onclick="closeS()"></i>
+            <input type="text" id="sInp" placeholder="Cari film atau genre..." onkeyup="doS(event)">
+        </div>
+        <div id="sResults" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="scroller" id="app" onscroll="scr()">
+        <div class="hero" id="heroSec">
+            <div class="hero-overlay"></div>
+            <div class="hero-info">
+                <h1 class="hero-title" id="hTitle">LOADING...</h1>
+                <button class="btn-play" id="hPlay"><i class="fa-solid fa-play"></i> Putar</button>
+            </div>
+        </div>
+        <div id="contentBody"></div>
+        <div style="height:120px;"></div>
+    </div>
+
+    <div id="playerUI">
+        <div id="ytWrapper"><div id="ytPlayer"></div></div>
+        
+        <div style="position:absolute; inset:0; z-index:5;" onclick="wakeUI()" ontouchstart="wakeUI()"></div>
+        
+        <div class="controls" id="pControls">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <i class="fa-solid fa-chevron-left" style="font-size:30px;" onclick="closeP()"></i>
+                <span id="vTitle" style="font-weight:700; font-size:14px; text-transform: uppercase;"></span>
+                <i class="fa-solid fa-gear" style="font-size:22px;"></i>
+            </div>
+            
+            <div style="display:flex; justify-content:center; align-items:center; gap:80px;">
+                <i class="fa-solid fa-backward" style="font-size:40px;" onclick="player.seekTo(player.getCurrentTime()-10)"></i>
+                <i class="fa-solid fa-pause" id="pBtn" style="font-size:80px;" onclick="toggleP()"></i>
+                <i class="fa-solid fa-forward" style="font-size:40px;" onclick="player.seekTo(player.getCurrentTime()+10)"></i>
+            </div>
+            
+            <div style="width:100%;">
+                <div style="height:4px; background:rgba(255,255,255,0.2); margin-bottom:10px; border-radius: 2px;">
+                    <div id="pBar" style="height:100%; background:var(--red); width:0%; border-radius: 2px;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;">
+                    <span id="cur">00:00</span>
+                    <span id="dur">00:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-item active"><i class="fa-solid fa-house"></i><p>Beranda</p></div>
+        <div class="nav-item"><i class="fa-solid fa-fire"></i><p>Populer</p></div>
+        <div class="nav-item"><i class="fa-solid fa-clapperboard"></i><p>Film</p></div>
+        <div class="nav-item"><i class="fa-solid fa-user"></i><p>Saya</p></div>
+    </nav>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const YT_KEY = 'AIzaSyCf6sg6HxiI0j3PO6wLbNmDKuYBbEn-9sU';
+        const TMDB_KEY = '56449ba09d06ab60eccccf99e07b59ad';
+        let player, hTimer, pTimer;
+
+        window.onload = () => {
+            document.getElementById('app').style.opacity = '1';
+            loadFullHome();
+        };
+
+        async function loadFullHome() {
+            const categories = [
+                { n: "Sedang Tren", p: "trending/movie/week" },
+                { n: "Film Indonesia Terbaru", p: "discover/movie", e: "&with_original_language=id&region=ID&sort_by=primary_release_date.desc" },
+                { n: "Action Populer", p: "discover/movie", e: "&with_genres=28" },
+                { n: "Horor Paling Seram", p: "discover/movie", e: "&with_genres=27" },
+                { n: "Rekomendasi Sci-Fi", p: "discover/movie", e: "&with_genres=878" }
+            ];
+
+            const body = document.getElementById('contentBody');
+            body.innerHTML = ""; 
+
+            for(let [i, c] of categories.entries()) {
+                const res = await fetch(`https://api.themoviedb.org/3/${c.p}?api_key=${TMDB_KEY}${c.e || ''}`);
+                const data = await res.json();
+                const films = data.results.filter(f => f.poster_path);
+
+                if(i === 0) {
+                    const top = films[0];
+                    document.getElementById('heroSec').style.backgroundImage = `url(https://image.tmdb.org/t/p/original${top.backdrop_path})`;
+                    document.getElementById('hTitle').innerText = top.title;
+                    document.getElementById('hPlay').onclick = () => getV(top.title);
+                }
+                
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `<p class="row-title">${c.n}</p><div class="row-items">${films.map(f => `
+                    <div class="card" onclick="getV('${f.title.replace(/'/g,"")}')">
+                        <img src="https://image.tmdb.org/t/p/w500${f.poster_path}">
+                    </div>`).join('')}</div>`;
+                body.appendChild(row);
+            }
+        }
+
+        async function getV(t) {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=${encodeURIComponent(t + " full movie")}&part=snippet&maxResults=1&type=video&videoDuration=long`);
+            const data = await res.json();
+            if(data.items && data.items.length > 0) {
+                startP(data.items[0].id.videoId, t);
+            } else {
+                alert("Maaf, film belum tersedia secara publik.");
+            }
+        }
+
+        function startP(id, t) {
+            const ui = document.getElementById('playerUI');
+            ui.style.display = 'block';
+            
+            if (ui.requestFullscreen) ui.requestFullscreen();
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
+
+            document.getElementById('vTitle').innerText = t;
+            if(player) player.destroy();
+
+            player = new YT.Player('ytPlayer', {
+                videoId: id,
+                playerVars: { 
+                    'autoplay': 1, 
+                    'controls': 0, 
+                    'modestbranding': 1, 
+                    'rel': 0, 
+                    'vq': 'hd1080',
+                    'playsinline': 1 
+                },
+                events: { 
+                    'onStateChange': (e) => {
+                        sync(e);
+                        if(e.data == 1) resetHideTimer(); // Sembunyi jika jalan
+                    },
+                    'onReady': (e) => {
+                        e.target.setPlaybackQuality('hd1080');
+                        e.target.playVideo();
+                    }
+                }
+            });
+            wakeUI();
+        }
+
+        // FUNGSI BANGUNIN UI
+        function wakeUI() {
+            const ctrl = document.getElementById('pControls');
+            ctrl.classList.remove('hide-ui');
+            resetHideTimer();
+        }
+
+        // FUNGSI SEMBUNYI OTOMATIS (2 DETIK)
+        function resetHideTimer() {
+            clearTimeout(hTimer);
+            hTimer = setTimeout(() => {
+                // UI hanya hilang jika film sedang PLAYING (1)
+                if(player && player.getPlayerState() == 1) {
+                    document.getElementById('pControls').classList.add('hide-ui');
+                }
+            }, 2000); 
+        }
+
+        function sync(e) {
+            const b = document.getElementById('pBtn');
+            if(e.data == 1) {
+                b.className = "fa-solid fa-pause";
+                pTimer = setInterval(() => {
+                    let n = player.getCurrentTime(), d = player.getDuration();
+                    document.getElementById('pBar').style.width = (n/d*100) + '%';
+                    document.getElementById('cur').innerText = fmt(n);
+                    document.getElementById('dur').innerText = fmt(d);
+                }, 1000);
+            } else {
+                b.className = "fa-solid fa-play";
+                clearInterval(pTimer);
+            }
+        }
+
+        function toggleP() { 
+            if(player.getPlayerState() == 1) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+            wakeUI(); 
+        }
+        
+        function closeP() {
+            if(document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            if(player) { player.stopVideo(); player.destroy(); player = null; }
+            document.getElementById('playerUI').style.display = 'none';
+        }
+
+        function openS() { 
+            document.getElementById('searchOverlay').style.display = 'block'; 
+            document.getElementById('sInp').focus(); 
+        }
+        function closeS() { document.getElementById('searchOverlay').style.display = 'none'; }
+        
+        async function doS(e) {
+            if(e.key === "Enter") {
+                const query = e.target.value;
+                const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                const target = document.getElementById('sResults');
+                target.innerHTML = "";
+                
+                if(data.results.length > 0) {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.innerHTML = `<p class="row-title">Hasil Pencarian: ${query}</p><div class="row-items">${data.results.filter(f => f.poster_path).map(f => `
+                        <div class="card" onclick="getV('${f.title.replace(/'/g,"")}')"><img src="https://image.tmdb.org/t/p/w500${f.poster_path}"></div>`).join('')}</div>`;
+                    target.appendChild(row);
+                } else {
+                    target.innerHTML = "<p style='text-align:center;color:#666;'>Film tidak ditemukan.</p>";
+                }
+            }
+        }
+
+        function scr() { 
+            const n = document.getElementById('navbar'); 
+            document.getElementById('app').scrollTop > 50 ? n.classList.add('solid') : n.classList.remove('solid'); 
+        }
+        
+        function fmt(s) { 
+            if(!s) return "00:00";
+            let m = Math.floor(s/60), sc = Math.floor(s%60); 
+            return `${m}:${sc < 10 ? '0'+sc : sc}`; 
+        }
+    </script>
+</body>
+</html>
