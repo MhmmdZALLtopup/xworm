@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>R-FILM PREMIUM | V2.4</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --red: #E50914; 
+            --bg: #000000; 
+            --bg-light: #141414;
+            --text: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        /* --- BLUR & GLASSMORPHISM --- */
+        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(0,0,0,0.6); }
+
+        /* --- SIDEBAR --- */
+        #sideMenu {
+            position: fixed; top: 0; left: -100%; width: 75%; height: 100%;
+            background: rgba(20, 20, 20, 0.95); z-index: 5000; transition: 0.4s;
+            padding: 60px 25px; backdrop-filter: blur(15px);
+        }
+        #sideMenu.active { left: 0; }
+        #menuOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 4999; display: none; }
+
+        /* --- HOME --- */
+        #homeScreen { height: 100vh; overflow-y: auto; padding-bottom: 100px; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: fixed; width: 100%; top: 0; z-index: 1000; transition: 0.3s; }
+        .nav-logo { color: var(--red); font-weight: 900; font-size: 26px; font-family: 'Arial Black'; }
+
+        .hero-home { width: 100%; height: 80vh; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+        .hero-home img { position: absolute; top: 0; width: 100%; height: 100%; object-fit: cover; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--bg) 2%, transparent 50%, rgba(0,0,0,0.4) 100%); }
+        .hero-content { position: relative; z-index: 10; text-align: center; width: 100%; padding: 20px; }
+        
+        .row { margin-top: 25px; padding-left: 15px; }
+        .row-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .row-items { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+        .card { flex: 0 0 120px; height: 170px; border-radius: 4px; overflow: hidden; transition: 0.3s; cursor: pointer; }
+        .card:active { transform: scale(0.9); }
+        .card img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- SEARCH SCREEN --- */
+        #searchScreen { position: fixed; inset: 0; background: var(--bg); z-index: 1500; display: none; padding-top: 20px; overflow-y: auto; padding-bottom: 100px; }
+        .search-box { background: #333; margin: 0 20px; border-radius: 8px; display: flex; align-items: center; padding: 10px 15px; }
+        .search-box input { background: transparent; border: none; color: white; width: 100%; margin-left: 10px; outline: none; font-size: 16px; }
+        #searchResults { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
+        .search-card { border-radius: 4px; overflow: hidden; height: 150px; cursor: pointer; }
+        .search-card img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- DETAIL --- */
+        #detailScreen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; overflow-y: auto; }
+        .d-hero { width: 100%; height: 45vh; position: relative; }
+        .d-hero img { width: 100%; height: 100%; object-fit: cover; }
+        .d-body { padding: 20px; background: linear-gradient(to bottom, transparent, var(--bg) 10%); margin-top: -50px; position: relative; }
+
+        /* --- PLAYER --- */
+        #playerScreen { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; }
+        #playerIframe { width: 100vw; height: 100vh; border: none; }
+        #playerControls { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: space-between; padding: 30px; opacity: 1; transition: 0.5s; }
+        
+        /* --- BUTTONS --- */
+        .btn-play { background: #fff; color: #000; padding: 12px; border-radius: 4px; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin-top: 15px; cursor: pointer; }
+        .btn-list { background: #262626; color: #fff; padding: 12px; border-radius: 4px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin-top: 10px; }
+
+        .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; position: relative; }
+        #progressFill { height: 100%; background: var(--red); width: 0%; border-radius: 2px; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; z-index: 3000; border-top: 0.5px solid #333; }
+        .nav-item { text-align: center; color: #888; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: #fff; }
+        .nav-item.active i { color: var(--red); }
+    </style>
+</head>
+<body>
+
+    <div id="menuOverlay" onclick="toggleMenu()"></div>
+    <div id="sideMenu">
+        <h2 style="color:var(--red); margin-bottom:30px;">R-FILM</h2>
+        <div style="display:flex; flex-direction:column; gap:20px; color:#aaa; font-size:18px;">
+            <span><i class="fa-solid fa-user"></i> Profil Saya</span>
+            <span><i class="fa-solid fa-bell"></i> Notifikasi</span>
+            <span><i class="fa-solid fa-check"></i> Daftar Saya</span>
+        </div>
+    </div>
+
+    <div id="homeScreen" onscroll="handleScroll(this)">
+        <div class="top-nav" id="topNav">
+            <i class="fa-solid fa-bars" onclick="toggleMenu()" style="font-size: 24px;"></i>
+            <div class="nav-logo">R-FILM</div>
+            <div style="width:24px;"></div>
+        </div>
+
+        <div class="hero-home" id="heroDiv">
+            <img id="hImg" src="">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h1 id="hTitle" style="font-size:40px; margin-bottom:10px;">...</h1>
+                <div class="btn-play" onclick="playHero()"><i class="fa-solid fa-play"></i> Putar</div>
+            </div>
+        </div>
+
+        <div class="row"><div class="row-title">Populer di R-Film</div><div class="row-items" id="rowPop"></div></div>
+        <div class="row"><div class="row-title">Trending Sekarang</div><div class="row-items" id="rowTrend"></div></div>
+        <div class="row"><div class="row-title">Film Action & Thriller</div><div class="row-items" id="rowAction"></div></div>
+        <div class="row"><div class="row-title">Drama Pilihan</div><div class="row-items" id="rowDrama"></div></div>
+    </div>
+
+    <div id="searchScreen">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: #888;"></i>
+            <input type="text" id="searchInput" placeholder="Cari film..." oninput="debounceSearch()">
+            <i class="fa-solid fa-xmark" onclick="clearSearch()" style="color: #888; cursor: pointer;"></i>
+        </div>
+        <div id="searchResults"></div>
+    </div>
+
+    <div id="detailScreen">
+        <div class="d-hero">
+            <i class="fa-solid fa-arrow-left" onclick="closeDetail()" style="position:absolute; top:40px; left:20px; z-index:100; font-size:24px;"></i>
+            <img id="dImg" src="">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="d-body">
+            <h1 id="dTitleText" style="font-size:30px; font-weight:900;"></h1>
+            <div style="color:#46d369; font-weight:bold; margin:10px 0;">98% Cocok <span style="color:#aaa; margin-left:10px;">2026</span></div>
+            <div class="btn-play" onclick="openPlayer()"><i class="fa-solid fa-play"></i> Putar</div>
+            <div class="btn-list"><i class="fa-solid fa-download"></i> Download</div>
+            <p id="dDesc" style="margin-top:20px; color:#ccc; line-height:1.6;"></p>
+        </div>
+    </div>
+
+    <div id="playerScreen">
+        <div id="playerIframe"></div>
+        <div id="playerControls" onclick="toggleControls()">
+            <div style="display:flex; align-items:center; gap:20px;">
+                <i class="fa-solid fa-arrow-left" onclick="closePlayer()" style="font-size:24px;"></i>
+                <span id="pTitle" style="font-weight:bold;"></span>
+            </div>
+            <div style="display:flex; justify-content:center; align-items:center; gap:60px;">
+                <i class="fa-solid fa-backward-10" style="font-size:30px;"></i>
+                <i class="fa-solid fa-play" id="playIcon" onclick="togglePlay(event)" style="font-size:50px;"></i>
+                <i class="fa-solid fa-forward-10" style="font-size:30px;"></i>
+            </div>
+            <div>
+                <div class="progress-bar"><div id="progressFill"></div></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px;">
+                    <span id="currTime">0:00</span><span id="durTime">0:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav glass">
+        <div class="nav-item active" id="navHome" onclick="showTab('home')">
+            <i class="fa-solid fa-house" style="display:block; font-size:20px;"></i>
+            <span style="font-size:10px;">Home</span>
+        </div>
+        <div class="nav-item" id="navSearch" onclick="showTab('search')">
+            <i class="fa-solid fa-magnifying-glass" style="display:block; font-size:20px;"></i>
+            <span style="font-size:10px;">Search</span>
+        </div>
+        <div class="nav-item">
+            <i class="fa-solid fa-layer-group" style="display:block; font-size:20px;"></i>
+            <span style="font-size:10px;">New</span>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const API_KEY = '56449ba09d06ab60eccccf99e07b59ad';
+        const YT_KEY = 'AIzaSyCvrtosP_YFNhbD8X5E9iZQgbKPg_5Y-Eo';
+        let player, currentMovie, searchTimer;
+
+        // --- NAVIGATION LOGIC ---
+        function showTab(tab) {
+            const home = document.getElementById('homeScreen');
+            const search = document.getElementById('searchScreen');
+            const navHome = document.getElementById('navHome');
+            const navSearch = document.getElementById('navSearch');
+
+            if(tab === 'home') {
+                home.style.display = 'block';
+                search.style.display = 'none';
+                navHome.classList.add('active');
+                navSearch.classList.remove('active');
+            } else {
+                home.style.display = 'none';
+                search.style.display = 'block';
+                navHome.classList.remove('active');
+                navSearch.classList.add('active');
+                document.getElementById('searchInput').focus();
+            }
+        }
+
+        // --- SEARCH LOGIC ---
+        function debounceSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                const query = document.getElementById('searchInput').value;
+                if(query.length > 2) {
+                    fetchSearch(query);
+                } else {
+                    document.getElementById('searchResults').innerHTML = '';
+                }
+            }, 500);
+        }
+
+        async function fetchSearch(query) {
+            const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            const container = document.getElementById('searchResults');
+            
+            if(data.results.length === 0) {
+                container.innerHTML = `<p style="grid-column: span 3; text-align: center; color: #888; margin-top: 20px;">Film tidak ditemukan.</p>`;
+                return;
+            }
+
+            container.innerHTML = data.results.map(m => `
+                <div class="search-card" onclick='viewDetail(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                    <img src="${m.poster_path ? 'https://image.tmdb.org/t/p/w300' + m.poster_path : 'https://via.placeholder.com/300x450?text=No+Image'}">
+                </div>
+            `).join('');
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        // --- CORE LOGIC ---
+        function toggleMenu() {
+            const m = document.getElementById('sideMenu');
+            const o = document.getElementById('menuOverlay');
+            m.classList.toggle('active');
+            o.style.display = m.classList.contains('active') ? 'block' : 'none';
+        }
+
+        function handleScroll(el) {
+            const nav = document.getElementById('topNav');
+            if(el.scrollTop > 50) nav.classList.add('glass');
+            else nav.classList.remove('glass');
+        }
+
+        async function init() {
+            const urls = {
+                rowPop: `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`,
+                rowTrend: `https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`,
+                rowAction: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=28`,
+                rowDrama: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=18`
+            };
+            for (let id in urls) {
+                const res = await fetch(urls[id]);
+                const data = await res.json();
+                document.getElementById(id).innerHTML = data.results.map(m => `
+                    <div class="card" onclick='viewDetail(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                        <img src="https://image.tmdb.org/t/p/w300${m.poster_path}">
+                    </div>
+                `).join('');
+                if(id === 'rowPop' && !currentMovie) {
+                    currentMovie = data.results[0];
+                    document.getElementById('hImg').src = 'https://image.tmdb.org/t/p/original' + currentMovie.poster_path;
+                    document.getElementById('hTitle').innerText = currentMovie.title;
+                }
+            }
+        }
+
+        function viewDetail(m) {
+            currentMovie = m;
+            document.getElementById('dTitleText').innerText = m.title;
+            document.getElementById('dDesc').innerText = m.overview;
+            document.getElementById('dImg').src = 'https://image.tmdb.org/t/p/original' + (m.backdrop_path || m.poster_path);
+            document.getElementById('detailScreen').style.display = 'block';
+        }
+        
+        function closeDetail() { document.getElementById('detailScreen').style.display = 'none'; }
+
+        async function openPlayer() {
+            document.getElementById('pTitle').innerText = currentMovie.title;
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(currentMovie.title + " full movie english")}&type=video&maxResults=1&key=${YT_KEY}`);
+            const data = await res.json();
+            const vidId = data.items[0]?.id?.videoId;
+
+            if(!vidId) { alert("Video tidak tersedia."); return; }
+
+            document.getElementById('playerScreen').style.display = 'block';
+
+            const pScreen = document.getElementById('playerScreen');
+            if (pScreen.requestFullscreen) pScreen.requestFullscreen();
+            
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(e => console.log("Orientation lock not supported"));
+            }
+
+            if (player) {
+                player.loadVideoById(vidId);
+            } else {
+                player = new YT.Player('playerIframe', {
+                    videoId: vidId,
+                    playerVars: { 'controls': 0, 'modestbranding': 1, 'rel': 0, 'playsinline': 1 },
+                    events: { 
+                        'onReady': (e) => { e.target.playVideo(); updateTimer(); }, 
+                        'onStateChange': (e) => {
+                            document.getElementById('playIcon').className = e.data == 1 ? "fa-solid fa-pause" : "fa-solid fa-play";
+                        }
+                    }
+                });
+            }
+        }
+
+        function togglePlay(e) {
+            e.stopPropagation();
+            if(player.getPlayerState() == 1) player.pauseVideo();
+            else player.playVideo();
+        }
+
+        function updateTimer() {
+            setInterval(() => {
+                if(player && player.getCurrentTime) {
+                    const c = player.getCurrentTime();
+                    const d = player.getDuration();
+                    document.getElementById('progressFill').style.width = (c/d*100) + "%";
+                    document.getElementById('currTime').innerText = Math.floor(c/60) + ":" + ("0"+Math.floor(c%60)).slice(-2);
+                    document.getElementById('durTime').innerText = Math.floor(d/60) + ":" + ("0"+Math.floor(d%60)).slice(-2);
+                }
+            }, 1000);
+        }
+
+        function closePlayer() {
+            if(player) player.stopVideo();
+            document.getElementById('playerScreen').style.display = 'none';
+            if (document.exitFullscreen) document.exitFullscreen();
+            if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+        }
+
+        function toggleControls() {
+            const c = document.getElementById('playerControls');
+            c.style.opacity = c.style.opacity == "0" ? "1" : "0";
+        }
+
+        function playHero() { viewDetail(currentMovie); openPlayer(); }
+        window.onload = init;
+    </script>
+</body>
+</html>
