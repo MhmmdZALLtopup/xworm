@@ -3,266 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>R-FILM PREMIUM | V2.4</title>
+    <title>R-FILM | NETFLIX CLONE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --red: #E50914; 
-            --bg: #000000; 
-            --bg-light: #141414;
-            --text: #ffffff;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        :root { var(--red): #E50914; --bg: #000000; --text: #ffffff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+        
+        /* TOP NAV & SEARCH */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: fixed; width: 100%; top: 0; z-index: 1000; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); transition: 0.3s; }
+        .nav-logo { color: #E50914; font-weight: 900; font-size: 24px; letter-spacing: 2px; }
+        .search-container { display: flex; align-items: center; background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 20px; padding: 5px 15px; transition: 0.3s; }
+        .search-container input { background: transparent; border: none; color: white; outline: none; width: 0px; transition: 0.4s; padding: 0; }
+        .search-container.active input { width: 120px; padding-left: 10px; }
+        .search-container i { color: white; cursor: pointer; }
 
-        /* --- BLUR & GLASSMORPHISM --- */
-        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(0,0,0,0.6); }
-
-        /* --- SIDEBAR --- */
-        #sideMenu {
-            position: fixed; top: 0; left: -100%; width: 75%; height: 100%;
-            background: rgba(20, 20, 20, 0.95); z-index: 5000; transition: 0.4s;
-            padding: 60px 25px; backdrop-filter: blur(15px);
-        }
+        /* HAMBURGER MENU */
+        #sideMenu { position: fixed; top: 0; left: -100%; width: 80%; max-width: 300px; height: 100%; background: #141414; z-index: 5000; transition: 0.4s; padding: 50px 20px; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5);}
         #sideMenu.active { left: 0; }
-        #menuOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 4999; display: none; }
+        #menuOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 4999; display: none; }
+        .menu-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #333; color: #ddd; font-size: 15px; cursor: pointer; }
+        .menu-item i { width: 25px; color: #E50914; font-size: 18px;}
 
-        /* --- HOME --- */
-        #homeScreen { height: 100vh; overflow-y: auto; padding-bottom: 100px; }
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: fixed; width: 100%; top: 0; z-index: 1000; transition: 0.3s; }
-        .nav-logo { color: var(--red); font-weight: 900; font-size: 26px; font-family: 'Arial Black'; }
-
-        .hero-home { width: 100%; height: 80vh; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+        /* HOME SCREEN & ROWS */
+        #mainContent { transition: 0.3s; padding-bottom: 50px;}
+        .hero-home { width: 100%; height: 75vh; position: relative; display: flex; justify-content: center; align-items: flex-end; }
         .hero-home img { position: absolute; top: 0; width: 100%; height: 100%; object-fit: cover; }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--bg) 2%, transparent 50%, rgba(0,0,0,0.4) 100%); }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--bg) 0%, transparent 60%, rgba(0,0,0,0.6) 100%); }
         .hero-content { position: relative; z-index: 10; text-align: center; width: 100%; padding: 20px; }
         
-        .row { margin-top: 25px; padding-left: 15px; }
-        .row-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-        .row-items { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
-        .card { flex: 0 0 120px; height: 170px; border-radius: 4px; overflow: hidden; transition: 0.3s; cursor: pointer; }
-        .card:active { transform: scale(0.9); }
+        .row { margin-top: 20px; padding-left: 15px; }
+        .row-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+        .row-items { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+        .card { flex: 0 0 110px; height: 160px; border-radius: 6px; overflow: hidden; transition: 0.2s; position: relative;}
         .card img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- SEARCH SCREEN --- */
-        #searchScreen { position: fixed; inset: 0; background: var(--bg); z-index: 1500; display: none; padding-top: 20px; overflow-y: auto; padding-bottom: 100px; }
-        .search-box { background: #333; margin: 0 20px; border-radius: 8px; display: flex; align-items: center; padding: 10px 15px; }
-        .search-box input { background: transparent; border: none; color: white; width: 100%; margin-left: 10px; outline: none; font-size: 16px; }
-        #searchResults { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
-        .search-card { border-radius: 4px; overflow: hidden; height: 150px; cursor: pointer; }
-        .search-card img { width: 100%; height: 100%; object-fit: cover; }
+        /* SEARCH RESULTS GRID */
+        #searchScreen { display: none; padding: 80px 15px 20px 15px; min-height: 100vh; background: var(--bg); }
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 
-        /* --- DETAIL --- */
+        /* BUTTONS */
+        .btn-play { background: #fff; color: #000; padding: 10px; border-radius: 4px; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; margin-top: 10px; font-size: 15px; border: none;}
+        .btn-list { background: #333; color: #fff; padding: 10px; border-radius: 4px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; margin-top: 10px; border: none;}
+
+        /* DETAIL SCREEN */
         #detailScreen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; overflow-y: auto; }
-        .d-hero { width: 100%; height: 45vh; position: relative; }
+        .d-hero { width: 100%; height: 40vh; position: relative; }
         .d-hero img { width: 100%; height: 100%; object-fit: cover; }
-        .d-body { padding: 20px; background: linear-gradient(to bottom, transparent, var(--bg) 10%); margin-top: -50px; position: relative; }
+        .d-body { padding: 20px; margin-top: -30px; position: relative; background: linear-gradient(to bottom, transparent, var(--bg) 15%); }
 
-        /* --- PLAYER --- */
-        #playerScreen { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; }
-        #playerIframe { width: 100vw; height: 100vh; border: none; }
-        #playerControls { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: space-between; padding: 30px; opacity: 1; transition: 0.5s; }
-        
-        /* --- BUTTONS --- */
-        .btn-play { background: #fff; color: #000; padding: 12px; border-radius: 4px; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin-top: 15px; cursor: pointer; }
-        .btn-list { background: #262626; color: #fff; padding: 12px; border-radius: 4px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin-top: 10px; }
+        /* PLAYER & CONTROLS */
+        #playerScreen { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; overflow: hidden; }
+        #playerIframe { width: 100vw; height: 100vh; border: none; pointer-events: none; transform: scale(1.4); transform-origin: center; }
+        #playerControls { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10000; transition: opacity 0.3s; }
+        .skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px; opacity: 0; transition: 0.2s; pointer-events: none; }
+        #skipLeft { left: 10%; } #skipRight { right: 10%; }
 
-        .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; position: relative; }
-        #progressFill { height: 100%; background: var(--red); width: 0%; border-radius: 2px; }
+        /* ADS SCREEN */
+        #adScreen { position: fixed; inset: 0; background: #000; z-index: 15000; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        .ad-box { background: #1a1a1a; padding: 30px; border-radius: 12px; border: 1px solid #333; max-width: 85%; width: 320px; box-shadow: 0 10px 30px rgba(229,9,20,0.2);}
+        #adSkipBtn { display: none; margin-top: 20px; background: #E50914; padding: 12px 20px; border: none; color: white; font-weight: bold; border-radius: 5px; width: 100%; font-size: 16px;}
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; z-index: 3000; border-top: 0.5px solid #333; }
-        .nav-item { text-align: center; color: #888; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: #fff; }
-        .nav-item.active i { color: var(--red); }
+        /* MODERN TOAST ALERTS */
+        #toastContainer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: #333; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0; transform: translateY(20px); transition: 0.3s ease-out; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { border-left: 4px solid #46d369; }
+        .toast.error { border-left: 4px solid #E50914; }
+
+        /* MODERN MODAL */
+        #modernModal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #141414; width: 100%; max-width: 400px; border-radius: 10px; border: 1px solid #333; overflow: hidden; max-height: 80vh; display: flex; flex-direction: column;}
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 18px;}
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .watchlist-item { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; }
+        .watchlist-item img { width: 60px; border-radius: 5px; }
+
     </style>
 </head>
 <body>
 
-    <div id="menuOverlay" onclick="toggleMenu()"></div>
-    <div id="sideMenu">
-        <h2 style="color:var(--red); margin-bottom:30px;">R-FILM</h2>
-        <div style="display:flex; flex-direction:column; gap:20px; color:#aaa; font-size:18px;">
-            <span><i class="fa-solid fa-user"></i> Profil Saya</span>
-            <span><i class="fa-solid fa-bell"></i> Notifikasi</span>
-            <span><i class="fa-solid fa-check"></i> Daftar Saya</span>
+    <div id="toastContainer"></div>
+
+    <div id="modernModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">Daftar Saya</span>
+                <i class="fa-solid fa-xmark" style="font-size: 20px; cursor: pointer;" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
-    <div id="homeScreen" onscroll="handleScroll(this)">
-        <div class="top-nav" id="topNav">
-            <i class="fa-solid fa-bars" onclick="toggleMenu()" style="font-size: 24px;"></i>
-            <div class="nav-logo">R-FILM</div>
-            <div style="width:24px;"></div>
+    <div id="adScreen">
+        <div class="ad-box">
+            <h4 style="color:#aaa; font-weight: 400; margin-bottom: 10px;">Sponsor R-FILM</h4>
+            <div style="background: #000; border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                <i class="fa-solid fa-ad" style="font-size: 30px; color: #E50914; margin-bottom: 10px;"></i>
+                <p style="font-size: 12px; color: #888;">Ad Unit: ca-app-pub-.../2766246248</p>
+                <h3 style="margin-top: 10px;">Memuat Iklan...</h3>
+            </div>
+            <p>Iklan dapat dilewati dalam <span id="adTimer" style="color:#E50914; font-weight:bold; font-size:24px;">5</span> dtk</p>
+            <p style="font-size:11px; margin-top:10px; color:#666;">Upgrade Premium untuk pengalaman bebas iklan.</p>
+            <button id="adSkipBtn" onclick="skipAd()">Lewati Iklan <i class="fa-solid fa-forward"></i></button>
         </div>
+    </div>
 
-        <div class="hero-home" id="heroDiv">
-            <img id="hImg" src="">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-                <h1 id="hTitle" style="font-size:40px; margin-bottom:10px;">...</h1>
-                <div class="btn-play" onclick="playHero()"><i class="fa-solid fa-play"></i> Putar</div>
+    <div id="menuOverlay" onclick="toggleMenu()"></div>
+    <div id="sideMenu">
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" style="width:50px; border-radius:5px;">
+            <div>
+                <div style="font-weight:bold; font-size:16px;">Device ID:</div>
+                <div id="displayUid" style="font-size:11px; color:#aaa;"></div>
+                <div id="accStatus" style="font-size:11px; font-weight:bold; color:#E50914; margin-top:5px; background:rgba(229,9,20,0.2); padding:3px 6px; border-radius:4px; display:inline-block;">REGULAR</div>
             </div>
         </div>
+        <div class="menu-item" onclick="toggleMenu(); showWatchlistModal()"><i class="fa-solid fa-list"></i> Daftar Saya</div>
+        <div class="menu-item"><i class="fa-solid fa-clock-rotate-left"></i> Terakhir Ditonton: <br><span id="histWatch" style="font-size:12px; color:#888; margin-left:10px;">Belum ada</span></div>
+        <div class="menu-item" onclick="location.reload()"><i class="fa-solid fa-rotate-right"></i> Refresh Aplikasi</div>
+    </div>
 
-        <div class="row"><div class="row-title">Populer di R-Film</div><div class="row-items" id="rowPop"></div></div>
-        <div class="row"><div class="row-title">Trending Sekarang</div><div class="row-items" id="rowTrend"></div></div>
-        <div class="row"><div class="row-title">Film Action & Thriller</div><div class="row-items" id="rowAction"></div></div>
-        <div class="row"><div class="row-title">Drama Pilihan</div><div class="row-items" id="rowDrama"></div></div>
+    <div class="top-nav" id="topNav">
+        <i class="fa-solid fa-bars" onclick="toggleMenu()" style="font-size: 22px; cursor: pointer;"></i>
+        <div class="nav-logo">R-FILM</div>
+        <div class="search-container" id="searchBox">
+            <input type="text" id="searchInput" placeholder="Cari film..." onkeyup="handleSearch(this.value)">
+            <i class="fa-solid fa-magnifying-glass" onclick="toggleSearchInput()"></i>
+        </div>
     </div>
 
     <div id="searchScreen">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass" style="color: #888;"></i>
-            <input type="text" id="searchInput" placeholder="Cari film..." oninput="debounceSearch()">
-            <i class="fa-solid fa-xmark" onclick="clearSearch()" style="color: #888; cursor: pointer;"></i>
+        <h3 style="margin-bottom: 15px; font-size: 18px;">Hasil Pencarian</h3>
+        <div class="grid-container" id="searchGrid"></div>
+    </div>
+
+    <div id="mainContent">
+        <div class="hero-home" id="heroDiv">
+            <img id="hImg" src=""><div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h1 id="hTitle" style="font-size:32px; margin-bottom:10px; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); font-weight: 900;">...</h1>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-play" onclick="preparePlay()"><i class="fa-solid fa-play"></i> Putar</button>
+                    <button class="btn-list" onclick="addToList()"><i class="fa-solid fa-plus"></i> Daftar Saya</button>
+                </div>
+            </div>
         </div>
-        <div id="searchResults"></div>
+        <div class="row"><div class="row-title">Baru di R-Film</div><div class="row-items" id="rowNew"></div></div>
+        <div class="row"><div class="row-title">Drama China (Dracin)</div><div class="row-items" id="rowDracin"></div></div>
+        <div class="row"><div class="row-title">Action & Thriller</div><div class="row-items" id="rowAction"></div></div>
+        <div class="row"><div class="row-title">Sedang Trending</div><div class="row-items" id="rowTrend"></div></div>
     </div>
 
     <div id="detailScreen">
         <div class="d-hero">
-            <i class="fa-solid fa-arrow-left" onclick="closeDetail()" style="position:absolute; top:40px; left:20px; z-index:100; font-size:24px;"></i>
-            <img id="dImg" src="">
-            <div class="hero-overlay"></div>
+            <div style="position:absolute; top:20px; right:20px; z-index:100; background:rgba(0,0,0,0.6); padding:10px 15px; border-radius:50%; font-size:18px; cursor:pointer;" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></div>
+            <img id="dImg" src=""><div class="hero-overlay"></div>
         </div>
         <div class="d-body">
-            <h1 id="dTitleText" style="font-size:30px; font-weight:900;"></h1>
-            <div style="color:#46d369; font-weight:bold; margin:10px 0;">98% Cocok <span style="color:#aaa; margin-left:10px;">2026</span></div>
-            <div class="btn-play" onclick="openPlayer()"><i class="fa-solid fa-play"></i> Putar</div>
-            <div class="btn-list"><i class="fa-solid fa-download"></i> Download</div>
-            <p id="dDesc" style="margin-top:20px; color:#ccc; line-height:1.6;"></p>
+            <h1 id="dTitleText" style="font-size:24px; font-weight:900; margin-bottom:10px;"></h1>
+            <div style="color:#46d369; font-weight:bold; font-size:14px; margin-bottom:15px;">98% Match <span style="color:#aaa; margin-left:10px; border: 1px solid #aaa; padding:1px 4px; border-radius:3px;">HD</span></div>
+            <button class="btn-play" onclick="preparePlay()"><i class="fa-solid fa-play"></i> Putar</button>
+            <button class="btn-list" onclick="addToList()"><i class="fa-solid fa-plus"></i> Tambahkan ke Daftar Saya</button>
+            <p id="dDesc" style="margin-top:20px; color:#ccc; line-height:1.5; font-size:14px;"></p>
         </div>
     </div>
 
     <div id="playerScreen">
         <div id="playerIframe"></div>
-        <div id="playerControls" onclick="toggleControls()">
+        <div id="skipLeft" class="skip-indicator"><i class="fa-solid fa-backward-step"></i> -10s</div>
+        <div id="skipRight" class="skip-indicator">+10s <i class="fa-solid fa-forward-step"></i></div>
+        <div id="playerControls">
             <div style="display:flex; align-items:center; gap:20px;">
-                <i class="fa-solid fa-arrow-left" onclick="closePlayer()" style="font-size:24px;"></i>
-                <span id="pTitle" style="font-weight:bold;"></span>
+                <i class="fa-solid fa-arrow-left" onclick="closePlayer()" style="font-size:24px; cursor:pointer; text-shadow: 2px 2px 4px #000;"></i>
+                <span id="pTitle" style="font-weight:bold; font-size: 16px; text-shadow: 1px 1px 3px #000;"></span>
             </div>
-            <div style="display:flex; justify-content:center; align-items:center; gap:60px;">
-                <i class="fa-solid fa-backward-10" style="font-size:30px;"></i>
-                <i class="fa-solid fa-play" id="playIcon" onclick="togglePlay(event)" style="font-size:50px;"></i>
-                <i class="fa-solid fa-forward-10" style="font-size:30px;"></i>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <i class="fa-solid fa-play" id="playIcon" onclick="togglePlay(event)" style="font-size:50px; cursor:pointer; text-shadow: 2px 2px 5px #000;"></i>
             </div>
             <div>
-                <div class="progress-bar"><div id="progressFill"></div></div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px;">
+                <div style="width:100%; height:4px; background:rgba(255,255,255,0.3); border-radius:2px;"><div id="progressFill" style="height:100%; background:#E50914; width:0%;"></div></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; font-weight:bold; text-shadow: 1px 1px 3px #000;">
                     <span id="currTime">0:00</span><span id="durTime">0:00</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="bottom-nav glass">
-        <div class="nav-item active" id="navHome" onclick="showTab('home')">
-            <i class="fa-solid fa-house" style="display:block; font-size:20px;"></i>
-            <span style="font-size:10px;">Home</span>
-        </div>
-        <div class="nav-item" id="navSearch" onclick="showTab('search')">
-            <i class="fa-solid fa-magnifying-glass" style="display:block; font-size:20px;"></i>
-            <span style="font-size:10px;">Search</span>
-        </div>
-        <div class="nav-item">
-            <i class="fa-solid fa-layer-group" style="display:block; font-size:20px;"></i>
-            <span style="font-size:10px;">New</span>
-        </div>
-    </div>
-
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script>
-        const API_KEY = '56449ba09d06ab60eccccf99e07b59ad';
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = { apiKey: "AIzaSyD3usv5rw801fV1nrXIwyDQ6eYEzC7hDk0", authDomain: "kodangz.firebaseapp.com", databaseURL: "https://kodangz-default-rtdb.firebaseio.com", projectId: "kodangz" };
+        const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+
+        const TMDB_KEY = '56449ba09d06ab60eccccf99e07b59ad';
         const YT_KEY = 'AIzaSyCvrtosP_YFNhbD8X5E9iZQgbKPg_5Y-Eo';
-        let player, currentMovie, searchTimer;
+        // AD UNIT ID DISIMPAN SEBAGAI VARIABEL
+        const AD_UNIT_ID = "ca-app-pub-5492279915845730/2766246248";
+        
+        let ytPlayer, currentMovie, isPremium = false, adCallback = null;
 
-        // --- NAVIGATION LOGIC ---
-        function showTab(tab) {
-            const home = document.getElementById('homeScreen');
-            const search = document.getElementById('searchScreen');
-            const navHome = document.getElementById('navHome');
-            const navSearch = document.getElementById('navSearch');
+        // --- SISTEM TOAST (MODERN ALERT) ---
+        window.showToast = (msg, type = 'success') => {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}"></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
 
-            if(tab === 'home') {
-                home.style.display = 'block';
-                search.style.display = 'none';
-                navHome.classList.add('active');
-                navSearch.classList.remove('active');
+        // --- ID PERANGKAT & PREMIUM ---
+        let uid = localStorage.getItem('rfilm_device_id');
+        if(!uid) { uid = 'DEV-' + Math.random().toString(36).substr(2, 6).toUpperCase(); localStorage.setItem('rfilm_device_id', uid); }
+        document.getElementById('displayUid').innerText = uid;
+
+        set(ref(db, 'users/' + uid + '/lastOnline'), new Date().toLocaleString());
+        onValue(ref(db, 'users/' + uid + '/isPremium'), (snap) => {
+            isPremium = snap.val() || false;
+            document.getElementById('accStatus').innerText = isPremium ? "PREMIUM VIP 👑" : "REGULAR USER";
+            document.getElementById('accStatus').style.color = isPremium ? "#f1c40f" : "#E50914";
+        });
+
+        // --- HAMBURGER MENU & MODAL ---
+        window.toggleMenu = () => {
+            const m = document.getElementById('sideMenu');
+            m.classList.toggle('active');
+            document.getElementById('menuOverlay').style.display = m.classList.contains('active') ? 'block' : 'none';
+        };
+
+        window.closeModal = () => document.getElementById('modernModal').style.display = 'none';
+
+        // --- DAFTAR SAYA (WATCHLIST) ---
+        let myList = JSON.parse(localStorage.getItem('rfilm_mylist')) || [];
+        window.addToList = () => {
+            if(!myList.some(m => m.id === currentMovie.id)) {
+                myList.push({id: currentMovie.id, title: currentMovie.title || currentMovie.name, poster: currentMovie.poster_path});
+                localStorage.setItem('rfilm_mylist', JSON.stringify(myList));
+                showToast("Berhasil ditambahkan ke Daftar Saya", "success");
             } else {
-                home.style.display = 'none';
-                search.style.display = 'block';
-                navHome.classList.remove('active');
-                navSearch.classList.add('active');
-                document.getElementById('searchInput').focus();
+                showToast("Film sudah ada di daftar Anda", "error");
             }
-        }
+        };
 
-        // --- SEARCH LOGIC ---
-        function debounceSearch() {
+        window.showWatchlistModal = () => {
+            const body = document.getElementById('modalBody');
+            if(myList.length === 0) { body.innerHTML = '<div style="text-align:center; color:#888;">Daftar Anda masih kosong.</div>'; } 
+            else {
+                body.innerHTML = myList.map(m => `
+                    <div class="watchlist-item">
+                        <img src="https://image.tmdb.org/t/p/w200${m.poster}">
+                        <div style="font-weight:bold; font-size:14px;">${m.title}</div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('modernModal').style.display = 'flex';
+        };
+
+        // --- FITUR SEARCH BERSAMA TMDB ---
+        let searchTimer;
+        window.toggleSearchInput = () => {
+            const sBox = document.getElementById('searchBox');
+            const sInput = document.getElementById('searchInput');
+            sBox.classList.toggle('active');
+            if(sBox.classList.contains('active')) { sInput.focus(); } 
+            else { sInput.value = ''; handleSearch(''); document.getElementById('searchScreen').style.display = 'none'; document.getElementById('mainContent').style.display = 'block'; }
+        };
+
+        window.handleSearch = (query) => {
             clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                const query = document.getElementById('searchInput').value;
-                if(query.length > 2) {
-                    fetchSearch(query);
+            if(query.length < 2) { document.getElementById('searchScreen').style.display = 'none'; document.getElementById('mainContent').style.display = 'block'; return; }
+            
+            searchTimer = setTimeout(async () => {
+                const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=id-ID`);
+                const data = await res.json();
+                
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('searchScreen').style.display = 'block';
+                
+                if(data.results.length === 0) {
+                    document.getElementById('searchGrid').innerHTML = '<p style="grid-column: span 3; text-align:center; color:#888;">Film tidak ditemukan.</p>';
                 } else {
-                    document.getElementById('searchResults').innerHTML = '';
+                    document.getElementById('searchGrid').innerHTML = data.results.map(m => m.poster_path ? `
+                        <div class="card" style="width:100%; height:auto; aspect-ratio:2/3;" onclick='viewDetail(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                            <img src="https://image.tmdb.org/t/p/w300${m.poster_path}">
+                        </div>
+                    ` : '').join('');
                 }
             }, 500);
-        }
+        };
 
-        async function fetchSearch(query) {
-            const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            const container = document.getElementById('searchResults');
-            
-            if(data.results.length === 0) {
-                container.innerHTML = `<p style="grid-column: span 3; text-align: center; color: #888; margin-top: 20px;">Film tidak ditemukan.</p>`;
-                return;
-            }
-
-            container.innerHTML = data.results.map(m => `
-                <div class="search-card" onclick='viewDetail(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
-                    <img src="${m.poster_path ? 'https://image.tmdb.org/t/p/w300' + m.poster_path : 'https://via.placeholder.com/300x450?text=No+Image'}">
-                </div>
-            `).join('');
-        }
-
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').innerHTML = '';
-        }
-
-        // --- CORE LOGIC ---
-        function toggleMenu() {
-            const m = document.getElementById('sideMenu');
-            const o = document.getElementById('menuOverlay');
-            m.classList.toggle('active');
-            o.style.display = m.classList.contains('active') ? 'block' : 'none';
-        }
-
-        function handleScroll(el) {
-            const nav = document.getElementById('topNav');
-            if(el.scrollTop > 50) nav.classList.add('glass');
-            else nav.classList.remove('glass');
-        }
-
-        async function init() {
+        // --- FETCH KONTEN UTAMA ---
+        async function initApp() {
             const urls = {
-                rowPop: `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`,
-                rowTrend: `https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`,
-                rowAction: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=28`,
-                rowDrama: `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=18`
+                rowNew: `https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}`,
+                rowDracin: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=zh&with_genres=18`,
+                rowAction: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=28`,
+                rowTrend: `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`
             };
             for (let id in urls) {
-                const res = await fetch(urls[id]);
-                const data = await res.json();
-                document.getElementById(id).innerHTML = data.results.map(m => `
+                const res = await fetch(urls[id]); const data = await res.json();
+                document.getElementById(id).innerHTML = data.results.map(m => m.poster_path ? `
                     <div class="card" onclick='viewDetail(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
                         <img src="https://image.tmdb.org/t/p/w300${m.poster_path}">
                     </div>
-                `).join('');
-                if(id === 'rowPop' && !currentMovie) {
+                ` : '').join('');
+                if(id === 'rowNew' && !currentMovie) {
                     currentMovie = data.results[0];
                     document.getElementById('hImg').src = 'https://image.tmdb.org/t/p/original' + currentMovie.poster_path;
                     document.getElementById('hTitle').innerText = currentMovie.title;
@@ -270,81 +321,87 @@
             }
         }
 
-        function viewDetail(m) {
+        window.viewDetail = (m) => {
             currentMovie = m;
-            document.getElementById('dTitleText').innerText = m.title;
-            document.getElementById('dDesc').innerText = m.overview;
+            document.getElementById('dTitleText').innerText = m.title || m.name;
+            document.getElementById('dDesc').innerText = (m.overview || "Tidak ada deskripsi.").substring(0,180)+"...";
             document.getElementById('dImg').src = 'https://image.tmdb.org/t/p/original' + (m.backdrop_path || m.poster_path);
             document.getElementById('detailScreen').style.display = 'block';
-        }
-        
-        function closeDetail() { document.getElementById('detailScreen').style.display = 'none'; }
+        };
+        window.closeDetail = () => document.getElementById('detailScreen').style.display = 'none';
 
-        async function openPlayer() {
-            document.getElementById('pTitle').innerText = currentMovie.title;
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(currentMovie.title + " full movie english")}&type=video&maxResults=1&key=${YT_KEY}`);
-            const data = await res.json();
-            const vidId = data.items[0]?.id?.videoId;
+        // --- SISTEM IKLAN (BYPASS JIKA PREMIUM) ---
+        window.preparePlay = () => {
+            if(isPremium) { 
+                showToast("Memutar film Premium (Tanpa Iklan)", "success");
+                openPlayer(); 
+            } else { 
+                showAd(openPlayer); 
+            }
+        };
 
-            if(!vidId) { alert("Video tidak tersedia."); return; }
-
-            document.getElementById('playerScreen').style.display = 'block';
-
-            const pScreen = document.getElementById('playerScreen');
-            if (pScreen.requestFullscreen) pScreen.requestFullscreen();
+        function showAd(callback) {
+            adCallback = callback;
+            document.getElementById('adScreen').style.display = 'flex';
+            document.getElementById('adSkipBtn').style.display = 'none';
+            let timeLeft = 5; document.getElementById('adTimer').innerText = timeLeft;
+            document.getElementById('adTimer').parentElement.style.display = 'block';
             
-            if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('landscape').catch(e => console.log("Orientation lock not supported"));
-            }
-
-            if (player) {
-                player.loadVideoById(vidId);
-            } else {
-                player = new YT.Player('playerIframe', {
-                    videoId: vidId,
-                    playerVars: { 'controls': 0, 'modestbranding': 1, 'rel': 0, 'playsinline': 1 },
-                    events: { 
-                        'onReady': (e) => { e.target.playVideo(); updateTimer(); }, 
-                        'onStateChange': (e) => {
-                            document.getElementById('playIcon').className = e.data == 1 ? "fa-solid fa-pause" : "fa-solid fa-play";
-                        }
-                    }
-                });
-            }
-        }
-
-        function togglePlay(e) {
-            e.stopPropagation();
-            if(player.getPlayerState() == 1) player.pauseVideo();
-            else player.playVideo();
-        }
-
-        function updateTimer() {
-            setInterval(() => {
-                if(player && player.getCurrentTime) {
-                    const c = player.getCurrentTime();
-                    const d = player.getDuration();
-                    document.getElementById('progressFill').style.width = (c/d*100) + "%";
-                    document.getElementById('currTime').innerText = Math.floor(c/60) + ":" + ("0"+Math.floor(c%60)).slice(-2);
-                    document.getElementById('durTime').innerText = Math.floor(d/60) + ":" + ("0"+Math.floor(d%60)).slice(-2);
+            let int = setInterval(() => {
+                timeLeft--; document.getElementById('adTimer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(int);
+                    document.getElementById('adSkipBtn').style.display = 'block';
+                    document.getElementById('adTimer').parentElement.style.display = 'none';
                 }
             }, 1000);
         }
 
-        function closePlayer() {
-            if(player) player.stopVideo();
-            document.getElementById('playerScreen').style.display = 'none';
-            if (document.exitFullscreen) document.exitFullscreen();
-            if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-        }
+        window.skipAd = () => {
+            document.getElementById('adScreen').style.display = 'none';
+            if(adCallback) adCallback();
+        };
 
-        function toggleControls() {
-            const c = document.getElementById('playerControls');
-            c.style.opacity = c.style.opacity == "0" ? "1" : "0";
-        }
+        // --- PLAYER YOUTUBE ---
+        window.openPlayer = async () => {
+            const title = currentMovie.title || currentMovie.name;
+            set(ref(db, 'users/' + uid + '/lastWatched'), title);
+            document.getElementById('histWatch').innerText = title;
+            document.getElementById('pTitle').innerText = title;
+            
+            const pScreen = document.getElementById('playerScreen');
+            pScreen.style.display = 'block';
+            if (pScreen.requestFullscreen) pScreen.requestFullscreen();
+            if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
 
-        function playHero() { viewDetail(currentMovie); openPlayer(); }
-        window.onload = init;
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(title + " official movie hd")}&type=video&maxResults=1&key=${YT_KEY}`);
+            const data = await res.json(); const vidId = data.items[0]?.id?.videoId;
+
+            if (ytPlayer) { ytPlayer.loadVideoById(vidId); } 
+            else {
+                ytPlayer = new YT.Player('playerIframe', { videoId: vidId, playerVars: { 'controls': 0, 'modestbranding': 1, 'rel': 0, 'playsinline': 1, 'disablekb': 1 },
+                    events: { 'onReady': (e) => { e.target.playVideo(); setInterval(updateTimer, 1000); }, 
+                    'onStateChange': (e) => { document.getElementById('playIcon').className = e.data == 1 ? "fa-solid fa-pause" : "fa-solid fa-play"; } }
+                });
+            }
+        };
+
+        let clickTimer = null;
+        document.getElementById('playerControls').addEventListener('click', (e) => {
+            if(e.target.tagName === 'I') return;
+            if (clickTimer) {
+                clearTimeout(clickTimer); clickTimer = null;
+                if (e.clientX < window.innerWidth / 2) { ytPlayer.seekTo(ytPlayer.getCurrentTime() - 10, true); showSkipAnim('skipLeft'); } 
+                else { ytPlayer.seekTo(ytPlayer.getCurrentTime() + 10, true); showSkipAnim('skipRight'); }
+            } else { clickTimer = setTimeout(() => { const c = document.getElementById('playerControls'); c.style.opacity = c.style.opacity == "0" ? "1" : "0"; clickTimer = null; }, 250); }
+        });
+
+        function showSkipAnim(id) { const el = document.getElementById(id); el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 500); }
+        window.togglePlay = (e) => { e.stopPropagation(); if(ytPlayer.getPlayerState() == 1) ytPlayer.pauseVideo(); else ytPlayer.playVideo(); };
+        window.closePlayer = () => { if(ytPlayer) ytPlayer.stopVideo(); document.getElementById('playerScreen').style.display = 'none'; if (document.exitFullscreen) document.exitFullscreen(); if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); };
+        function updateTimer() { if(ytPlayer && ytPlayer.getCurrentTime) { const c = ytPlayer.getCurrentTime(); const d = ytPlayer.getDuration(); document.getElementById('progressFill').style.width = (c/d*100) + "%"; document.getElementById('currTime').innerText = Math.floor(c/60) + ":" + ("0"+Math.floor(c%60)).slice(-2); document.getElementById('durTime').innerText = Math.floor(d/60) + ":" + ("0"+Math.floor(d%60)).slice(-2); } }
+
+        window.addEventListener('load', initApp);
     </script>
 </body>
 </html>
